@@ -6,6 +6,10 @@
 .field input, .field select { border: 0; outline: 0; background: transparent; width: 100%; min-width: 0; color: var(--color-text); font-size: 14px; padding: 0; }
 .field:focus-within { outline: 2px solid var(--color-primary); }
 .dates { display: grid; grid-template-columns: 1fr 1fr; }
+.dateField { position: relative; }
+.dateField span { color: var(--color-text); font-size: 14px; white-space: nowrap; }
+.dateField input { position: absolute; inset: 0; height: 100%; opacity: 0; cursor: pointer; }
+.dateField input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
 .dates .field:first-child { border-radius: 12px 0 0 12px; }
 .dates .field:last-child { border-radius: 0 12px 12px 0; margin-left: -1px; }
 .destination, .guests { position: relative; min-width: 0; }
@@ -27,4 +31,4 @@
 .counter div { display: flex; align-items: center; gap: 12px; }
 .counter button { width: 32px; height: 32px; border: 1px solid var(--color-border); border-radius: 50%; background: white; }
 .error { color: var(--color-danger); margin-top: 10px; font-size: 14px; }
-@media (max-width: 767px) { .card { padding: 16px; } .row { display: flex; flex-direction: column; gap: 8px; } .row > * { width: 100%; } .extras { gap: 12px; } .transferRow { flex-direction: column; } .transferRow > label { flex: auto; } }
+@media (max-width: 767px) { .card { padding: 20px; } .card:has(.row) { display: flex; flex-direction: column; justify-content: space-between; min-height: 392px; gap: 8px; } .row { display: contents; } .row > * { width: 100%; } .row .submit { order: 2; } .extras { gap: 12px; margin-top: 0; } .transferRow { flex-direction: column; } .transferRow > label { flex: auto; } }
