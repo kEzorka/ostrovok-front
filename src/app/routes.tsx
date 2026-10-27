@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 import { App } from './App';
+import { HomePage } from '../features/home/HomePage';
 
 const informationTitles: Record<string, string> = {
   favorites: 'Избранное',
@@ -38,7 +39,7 @@ export const appRoutes: RouteObject[] = [
   {
     element: <App />,
     children: [
-      { index: true, element: <PlaceholderPage title="Отели и апартаменты" home /> },
+      { index: true, element: <HomePage /> },
       { path: 'search', element: <PlaceholderPage title="Поиск отелей" /> },
       { path: 'hotel/:slug', element: <PlaceholderPage title="Об отеле" /> },
       { path: 'checkout/:rateId', element: <PlaceholderPage title="Демо-подтверждение" /> },

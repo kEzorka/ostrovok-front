@@ -1,0 +1,30 @@
+.card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 20px #292f371c; }
+.row { display: grid; grid-template-columns: minmax(200px, 2.1fr) minmax(250px, 2fr) minmax(125px, .9fr) 150px; gap: 20px; align-items: start; }
+.transferRow { display: flex; gap: 10px; flex-wrap: wrap; }
+.transferRow > label { flex: 1 1 120px; }
+.field { height: 48px; border: 1px solid var(--color-border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; padding: 4px 12px; color: var(--color-muted); font-size: 11px; line-height: 1.2; min-width: 0; }
+.field input, .field select { border: 0; outline: 0; background: transparent; width: 100%; min-width: 0; color: var(--color-text); font-size: 14px; padding: 0; }
+.field:focus-within { outline: 2px solid var(--color-primary); }
+.dates { display: grid; grid-template-columns: 1fr 1fr; }
+.dates .field:first-child { border-radius: 12px 0 0 12px; }
+.dates .field:last-child { border-radius: 0 12px 12px 0; margin-left: -1px; }
+.destination, .guests { position: relative; min-width: 0; }
+.guestButton { height: 48px; width: 100%; text-align: left; border: 1px solid var(--color-border); background: white; border-radius: 12px; padding: 4px 12px; font-size: 14px; line-height: 1.2; }
+.guestButton small { display: block; color: var(--color-muted); font-size: 11px; }
+.submit { height: 48px; min-width: 120px; border: 0; border-radius: 12px; background: var(--color-primary); color: white; padding: 0 24px; }
+.submit:hover { background: var(--color-primary-hover); }
+.extras { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; margin-top: 18px; font-size: 14px; }
+.extras:first-child { margin: 0 0 16px; }
+.extras label { display: flex; align-items: center; gap: 6px; }
+.options, .popover { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; background: white; border-radius: 12px; box-shadow: var(--shadow-popover); padding: 12px; min-width: 100%; }
+.options { list-style: none; margin: 0; }
+.options li { padding: 8px; cursor: pointer; white-space: nowrap; }
+.options li[aria-selected='true'], .options li:hover { background: var(--color-primary-soft); }
+.popover { width: 280px; right: 0; left: auto; }
+.popover label { display: block; font-size: 13px; margin: 8px 0; }
+.popover select { margin-left: 8px; }
+.counter { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+.counter div { display: flex; align-items: center; gap: 12px; }
+.counter button { width: 32px; height: 32px; border: 1px solid var(--color-border); border-radius: 50%; background: white; }
+.error { color: var(--color-danger); margin-top: 10px; font-size: 14px; }
+@media (max-width: 767px) { .card { padding: 16px; } .row { display: flex; flex-direction: column; gap: 8px; } .row > * { width: 100%; } .extras { gap: 12px; } .transferRow { flex-direction: column; } .transferRow > label { flex: auto; } }

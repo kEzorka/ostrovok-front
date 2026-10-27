@@ -1,0 +1,24 @@
+.hero { background: var(--color-hero); min-height: 550px; padding: 126px 0 100px; }
+.hero h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.tagline { color: var(--color-primary); font-size: clamp(30px, 3.75vw, 48px); font-weight: 700; letter-spacing: -1px; line-height: 1.15; margin-bottom: 38px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; }
+.tabs button, .tabs a { border: 0; border-radius: 16px; padding: 13px 20px; color: var(--color-text); background: #ffffffb5; white-space: nowrap; font-size: 14px; }
+.tabs button[aria-selected='true'] { background: white; }
+.tabs a:hover { text-decoration: none; }
+.content { padding-top: 64px; padding-bottom: 64px; }
+.content h2 { font-size: 28px; line-height: 1.2; margin-bottom: 16px; }
+.content p { color: #62676e; }
+.promo, .app, .subscribe { border-radius: 16px; overflow: hidden; background: white; display: flex; align-items: center; gap: 40px; }
+.promo { min-height: 180px; }
+.promoArt { align-self: stretch; width: 33%; display: grid; place-items: center; background: linear-gradient(140deg, #2da6c5, #81dabc, #f3db8d); color: white; font-size: 70px; }
+.benefits { padding: 64px 0; }
+.benefitGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.benefitGrid article { background: white; border-radius: 16px; padding: 24px; }
+.benefitGrid span { color: var(--color-primary); font-size: 32px; }
+.benefitGrid h3 { margin: 12px 0 8px; }
+.app { padding: 40px; background: #dceaff; justify-content: space-between; }
+.phone { width: 120px; height: 170px; border: 8px solid var(--color-text); border-radius: 24px; display: grid; place-items: center; background: white; color: var(--color-primary); font-size: 40px; font-weight: bold; }
+.subscribe { display: block; margin-top: 64px; padding: 40px; }
+.subscribe button { border: 0; background: var(--color-primary); color: white; border-radius: 12px; padding: 14px 24px; margin-top: 20px; }
+.subscribe [role='status'] { margin-top: 12px; }
+@media (max-width: 767px) { .hero { min-height: 0; padding: 56px 0 48px; } .tagline { margin-bottom: 24px; } .content { padding-top: 32px; padding-bottom: 32px; } .promo { gap: 20px; padding-right: 16px; } .promoArt { min-width: 28%; } .benefits { padding: 40px 0; } .benefitGrid { grid-template-columns: 1fr; gap: 12px; } .app, .subscribe { padding: 24px; } .phone { flex-shrink: 0; width: 80px; height: 120px; } .subscribe { margin-top: 32px; } }
