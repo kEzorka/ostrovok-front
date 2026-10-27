@@ -46,7 +46,7 @@ describe('home search', () => {
     const user = userEvent.setup();
     const router = createMemoryRouter(appRoutes);
     render(<RouterProvider router={router} />);
-    await user.click(screen.getByRole('tab', { name: 'Трансферы' }));
+    await user.click(screen.getByRole('button', { name: 'Трансферы' }));
     await user.type(screen.getByLabelText('Откуда'), 'Москва');
     await user.type(screen.getByLabelText('Куда'), 'Аэропорт');
     await user.click(screen.getByLabelText('Туда и обратно'));
@@ -66,5 +66,14 @@ describe('home search', () => {
     expect(screen.getByRole('contentinfo')).toBeVisible();
     await userEvent.setup().click(screen.getByRole('button', { name: 'Подписаться' }));
     expect(screen.getByRole('status')).toHaveTextContent(/демо/i);
+  });
+  it('uses ordinary buttons for switching search modes', async () => {
+    const user = userEvent.setup();
+    render(<RouterProvider router={createMemoryRouter(appRoutes)} />);
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    const transfer = screen.getByRole('button', { name: 'Трансферы' });
+    await user.click(transfer);
+    expect(transfer).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText('Откуда')).toBeVisible();
   });
 });

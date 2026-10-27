@@ -30,4 +30,19 @@ describe('overlays', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+  it('closes on outside pointer or focus without stealing focus', async () => {
+    const user = userEvent.setup();
+    render(<><Popover label="Настройки" trigger="Открыть"><button>Внутри</button></Popover><button>Снаружи</button></>);
+    const trigger = screen.getByRole('button', { name: 'Открыть' });
+    const outside = screen.getByRole('button', { name: 'Снаружи' });
+    await user.click(trigger);
+    await user.click(outside);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(outside).toHaveFocus();
+    await user.click(trigger);
+    await user.tab();
+    await user.tab();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(outside).toHaveFocus();
+  });
 });
