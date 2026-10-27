@@ -25,7 +25,10 @@ function read(): { state: StoredState; writable: boolean } {
     const raw: unknown = JSON.parse(globalThis.localStorage.getItem(APP_STORAGE_KEY) ?? 'null');
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { state: emptyState(), writable: true };
     const record = raw as Record<string, unknown>;
-    if (record.version !== 0 && record.version !== 1) return { state: emptyState(), writable: false };
+    if (record.version !== 0 && record.version !== 1) {
+      const futureVersion = typeof record.version === 'number' && Number.isSafeInteger(record.version) && record.version > 1;
+      return { state: emptyState(), writable: !futureVersion };
+    }
     const state: StoredState = { version: 1, favorites: favoriteIds(record.version === 0 ? record.favoriteIds : record.favorites), lastSearch: searchState(record.version === 0 ? record.search : record.lastSearch) };
     if (record.version === 0) write(state);
     return { state, writable: true };

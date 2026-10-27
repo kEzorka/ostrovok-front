@@ -48,5 +48,7 @@ project illustrations served at the returned `/api/assets/hotels/*.webp` URLs.
 `{ version: 1, favorites: string[], lastSearch: SearchState | null }`.
 Version 0 is `{ version: 0, favoriteIds: string[], search: SearchState | null }`;
 reading migrates it in place. Favorites are unique, insertion-ordered IDs.
-Malformed records recover to empty state, and unavailable storage never breaks
-the app. Unsupported versions are read as empty and preserved without writes.
+Malformed records, including absent or invalid version fields, recover to empty
+state and can be overwritten by either setter. Unavailable storage never breaks
+the app. Future versions (safe integers greater than 1) are read as empty and
+preserved without writes.

@@ -31,6 +31,27 @@ describe('versioned application storage', () => {
     appStorage.setFavorites(['recovered']);
     expect(appStorage.getFavorites()).toEqual(['recovered']);
   });
+  it.each([
+    '{"favorites":["a"]}',
+    '{"version":null,"favorites":["a"]}',
+    '{"version":"1","favorites":["a"]}',
+    '{"version":-1,"favorites":["a"]}',
+    '{"version":1.5,"favorites":["a"]}',
+    '{"version":true,"favorites":["a"]}',
+    '{"version":{},"favorites":["a"]}',
+  ])('allows both setters to recover a malformed version record: %s', value => {
+    storage.setItem(APP_STORAGE_KEY, value);
+    expect(appStorage.getFavorites()).toEqual([]);
+    expect(appStorage.getLastSearch()).toBeNull();
+    appStorage.setFavorites(['recovered']);
+    expect(appStorage.getFavorites()).toEqual(['recovered']);
+    expect(JSON.parse(storage.getItem(APP_STORAGE_KEY)!)).toEqual({ version: 1, favorites: ['recovered'], lastSearch: null });
+
+    storage.setItem(APP_STORAGE_KEY, value);
+    appStorage.setLastSearch(testSearch);
+    expect(appStorage.getLastSearch()).toEqual(testSearch);
+    expect(JSON.parse(storage.getItem(APP_STORAGE_KEY)!)).toEqual({ version: 1, favorites: [], lastSearch: testSearch });
+  });
   it('migrates version zero favoriteIds and search to version one', () => {
     storage.setItem(APP_STORAGE_KEY, JSON.stringify({ version: 0, favoriteIds: ['a', 'a', 'b'], search: testSearch }));
     expect(appStorage.getFavorites()).toEqual(['a', 'b']);
@@ -40,7 +61,10 @@ describe('versioned application storage', () => {
   it('ignores unsupported future schemas without overwriting them', () => {
     const future = '{"version":2,"favorites":["future"]}';
     storage.setItem(APP_STORAGE_KEY, future);
+    expect(appStorage.getFavorites()).toEqual([]);
+    expect(appStorage.getLastSearch()).toBeNull();
     appStorage.setFavorites(['new']);
+    appStorage.setLastSearch(testSearch);
     expect(storage.getItem(APP_STORAGE_KEY)).toBe(future);
     expect(appStorage.getFavorites()).toEqual([]);
   });
