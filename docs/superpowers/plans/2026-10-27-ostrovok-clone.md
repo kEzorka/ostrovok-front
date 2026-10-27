@@ -2,23 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a responsive, fully clickable local clone of Ostrovok's public booking flow using mock data and no real booking or payment integrations.
+**Goal:** Build a responsive, pixel-accurate clone of Ostrovok's public booking flow backed by a replaceable mock HTTP API and no real booking or payment integrations.
 
-**Architecture:** A Vite React application is split into feature modules for home, search, hotel, checkout, and transfers, with a small shared UI kit. Search state is serialized to query parameters, favorites are stored through a versioned localStorage adapter, and all catalog/pricing behavior is implemented as pure TypeScript domain functions over local fixtures.
+**Architecture:** A Vite React application is split into feature modules for home, search, hotel, checkout, and transfers, with a shared UI kit measured from the visible Ostrovok reference. A small Express server exposes typed mock HTTP endpoints over local fixtures; the frontend accesses data only through an API client so the hackathon backend can replace the mock without component rewrites.
 
-**Tech Stack:** React, TypeScript, Vite, React Router, CSS modules/global design tokens, Vitest, Testing Library, Playwright.
+**Tech Stack:** React, TypeScript, Vite, React Router, Express, CSS modules/global design tokens, Vitest, Testing Library, Playwright.
 
 **Spec:** `docs/superpowers/specs/2026-10-27-ostrovok-clone-design.md`
 
 ## Global Constraints
 
 - No private Ostrovok APIs, copied production source, real authentication, real booking, payment collection, e-mail submission, or personal-data collection.
-- All hotel and transfer data must be typed local fixtures; all demo actions remain local.
+- All hotel and transfer data must be typed mock-server fixtures exposed through `/api`; all demo actions remain local.
+- Key screens must match the observed Ostrovok structure, spacing, colors, typography density, responsive reflow, drawers, and sticky elements at `390×844`, `768×1024`, and `1440×1000`.
 - Search state must survive refresh through query parameters; favorites and last search use a versioned localStorage adapter.
 - Price is deterministic: base rate × nights × rooms.
 - Support mobile `<768px`, tablet `768–1099px`, and desktop `>=1100px`.
 - Interactive controls need keyboard access, visible focus, labels, and reduced-motion support.
-- Use neutral locally bundled demo imagery with known reuse rights or project-owned placeholders.
+- Use locally bundled temporary mock imagery with known reuse rights or project-owned placeholders; keep image URLs in API responses so they are backend-replaceable.
 
 ## Review Focus
 
@@ -38,6 +39,9 @@
 - Create: `tsconfig.json`
 - Create: `tsconfig.app.json`
 - Create: `vite.config.ts`
+- Create: `server/index.ts`
+- Create: `server/app.ts`
+- Create: `server/app.test.ts`
 - Create: `vitest.config.ts`
 - Create: `playwright.config.ts`
 - Create: `eslint.config.js`
@@ -59,12 +63,12 @@
 - Create: `.gitignore`
 
 **Interfaces:**
-- Produces: `App`, `appRoutes`, `Button`, `FieldShell`, `SiteHeader`, and `SiteFooter` used by all later tasks.
-- Produces: scripts `dev`, `build`, `lint`, `test`, `test:watch`, and `e2e` in `package.json`.
+- Produces: `App`, `appRoutes`, `Button`, `FieldShell`, `SiteHeader`, `SiteFooter`, and `createMockApi()` used by all later tasks.
+- Produces: scripts `dev`, `dev:web`, `dev:api`, `build`, `lint`, `test`, `test:watch`, and `e2e` in `package.json`; Vite proxies `/api` to the mock server.
 
 - [ ] **Step 1: Write the failing shell test**
 
-  Add `renders the shared shell and a route outlet` in `src/app/App.test.tsx`; assert the logo, navigation controls, and route content are visible.
+  Add `renders the shared shell and a route outlet` in `src/app/App.test.tsx`; assert the logo, navigation controls, and route content are visible. Add an API smoke test asserting `GET /api/health` returns `{ status: "ok" }`.
 
 - [ ] **Step 2: Run the shell test and verify failure**
 
@@ -73,7 +77,7 @@
 
 - [ ] **Step 3: Create the Vite/React foundation and shared shell**
 
-  Implement the listed files, define the blue/green/neutral design tokens, global resets, responsive container, accessible `Button` variants, `FieldShell`, header, footer, and placeholder routes.
+  Implement the listed files, define measured blue/green/neutral design tokens, global resets, responsive container, accessible `Button` variants, `FieldShell`, header, footer, placeholder routes, Express app, and Vite proxy.
 
 - [ ] **Step 4: Verify the foundation**
 
@@ -88,7 +92,7 @@
 
 - [ ] **Step 5: Commit**
 
-  Run: `git add package.json package-lock.json tsconfig.json tsconfig.app.json vite.config.ts vitest.config.ts playwright.config.ts eslint.config.js index.html src .gitignore`
+  Run: `git add package.json package-lock.json tsconfig.json tsconfig.app.json vite.config.ts vitest.config.ts playwright.config.ts eslint.config.js index.html src server .gitignore`
 
   Run: `git commit -m "feat: scaffold ostrovok clone shell"`
 
@@ -98,9 +102,14 @@
 
 **Files:**
 - Create: `src/domain/types.ts`
-- Create: `src/domain/fixtures/destinations.ts`
-- Create: `src/domain/fixtures/hotels.ts`
-- Create: `src/domain/fixtures/transfers.ts`
+- Create: `server/fixtures/destinations.ts`
+- Create: `server/fixtures/hotels.ts`
+- Create: `server/fixtures/transfers.ts`
+- Create: `server/routes/search.ts`
+- Create: `server/routes/hotels.ts`
+- Create: `server/routes/transfers.ts`
+- Create: `src/shared/api/client.ts`
+- Create: `src/shared/api/client.test.ts`
 - Create: `src/domain/searchParams.ts`
 - Create: `src/domain/searchParams.test.ts`
 - Create: `src/domain/hotelSearch.ts`
@@ -123,6 +132,7 @@
 - Produces: `serializeSearchState(state: SearchState): URLSearchParams`.
 - Produces: `filterAndSortHotels(hotels: Hotel[], state: SearchState, filters: HotelFilters, sort: SortMode): Hotel[]`.
 - Produces: `calculateStayPrice(rate: HotelRate, state: SearchState): number`.
+- Produces: `apiClient.searchHotels(query)`, `apiClient.getHotel(slug)`, `apiClient.listTransfers(query)`, and stable JSON response contracts in `src/domain/types.ts`.
 - Produces: `appStorage.getFavorites()`, `setFavorites(ids)`, `getLastSearch()`, and `setLastSearch(state)`.
 
 - [ ] **Step 1: Write failing query and date tests**
@@ -138,9 +148,9 @@
   Run: `npm test -- src/domain src/shared/storage`
   Expected: FAIL because the domain modules do not exist.
 
-- [ ] **Step 4: Implement types, at least 12 hotels, 6 transfers, and pure domain functions**
+- [ ] **Step 4: Implement types, at least 12 hotels, 6 transfers, mock routes, API client, and pure domain functions**
 
-  Include multiple hotel types, star ratings, meal/cancellation combinations, amenities, distances, and price bands so every filter has meaningful results.
+  Include multiple hotel types, star ratings, meal/cancellation combinations, amenities, distances, and price bands so every filter has meaningful results. Frontend tests use the API client boundary rather than importing server fixtures.
 
 - [ ] **Step 5: Add and document local demo imagery**
 
@@ -153,7 +163,7 @@
 
 - [ ] **Step 7: Commit**
 
-  Run: `git add src/domain src/shared/storage src/assets`
+  Run: `git add src/domain src/shared/api src/shared/storage src/assets server`
 
   Run: `git commit -m "feat: add booking domain and demo catalog"`
 
@@ -177,7 +187,7 @@
 - Modify: `src/app/routes.tsx`
 
 **Interfaces:**
-- Consumes: `SearchState`, destination/transfer fixtures, serializers, shared shell/UI.
+- Consumes: `SearchState`, API client, serializers, shared shell/UI.
 - Produces: `HotelSearchForm({ initialState, onSubmit })` and `TransferSearchForm({ onSubmit })`.
 - Route contract: hotel submit navigates to `/search?<serialized state>`; transfer submit navigates to `/transfers?<serialized transfer state>`.
 
@@ -196,7 +206,7 @@
 
 - [ ] **Step 4: Implement accessible search controls and the home page**
 
-  Match the observed Ostrovok layout and states without submitting newsletter or personal data; the subscription CTA shows a local informational message only.
+  Match the observed Ostrovok layout and states one-to-one at the reference viewport without submitting newsletter or personal data; the subscription CTA shows a local informational message only.
 
 - [ ] **Step 5: Verify the home feature**
 
@@ -228,7 +238,7 @@
 - Modify: `src/app/routes.tsx`
 
 **Interfaces:**
-- Consumes: query parser, `filterAndSortHotels`, fixtures, `appStorage`, `HotelSearchForm` summary mode.
+- Consumes: query parser, `filterAndSortHotels`, API client, `appStorage`, `HotelSearchForm` summary mode.
 - Produces: `SearchPage`, reusable `HotelCard`, and `useHotelSearch(searchParams)`.
 - Route contract: card click navigates to `/hotel/:slug?<current search params>`.
 
@@ -247,7 +257,7 @@
 
 - [ ] **Step 4: Implement the search feature**
 
-  Use a desktop sidebar and mobile filter drawer, sticky query summary, responsive cards, and a CSS local map with deterministic marker positions from fixtures.
+  Use the observed mobile filter drawer and desktop filter column, sticky query summary, responsive cards, and a CSS local map with deterministic marker positions from API data.
 
 - [ ] **Step 5: Verify search behavior**
 
@@ -278,7 +288,7 @@
 - Modify: `src/app/routes.tsx`
 
 **Interfaces:**
-- Consumes: hotel/rate fixtures, query parser, pricing, shared modal, search summary.
+- Consumes: API client, query parser, pricing, shared modal, search summary.
 - Produces: `HotelPage` and route `/hotel/:slug`.
 - Route contract: a rate CTA navigates to `/checkout/:rateId?<current search params>`.
 
@@ -297,7 +307,7 @@
 
 - [ ] **Step 4: Implement the hotel detail experience**
 
-  Reproduce the observed information hierarchy: media, title/rating/address, search summary, available options, room/rate matrix, location panel, description, amenities, policies, reviews, and sticky mobile price CTA.
+  Reproduce the observed information hierarchy and geometry one-to-one: media, title/rating/address, search summary, available options, room/rate matrix, location panel, description, amenities, policies, reviews, and sticky mobile price CTA.
 
 - [ ] **Step 5: Verify hotel behavior**
 
@@ -327,7 +337,7 @@
 - Modify: `src/app/routes.tsx`
 
 **Interfaces:**
-- Consumes: rate/transfer fixtures, query parsing, pricing, shared shell/UI.
+- Consumes: API client, query parsing, pricing, shared shell/UI.
 - Produces: `/checkout/:rateId` and `/transfers` routes.
 - Demo contract: confirmation mutates only component state; no fetch, form submission, credentials, or personal fields.
 
@@ -458,9 +468,9 @@
   Run each command separately: `npm run lint`, `npm test`, `npm run agents:validate`, `npm run build`, `npm run e2e`.
   Expected: every command exits `0`.
 
-- [ ] **Step 7: Perform browser QA**
+- [ ] **Step 7: Perform browser and visual QA**
 
-  Compare home, search, filters, hotel, checkout, and transfers against the audited public interaction patterns at mobile and desktop sizes; verify keyboard focus and reduced-motion behavior.
+  Capture the public reference and local clone at `390×844`, `768×1024`, and `1440×1000`; compare home, search, filters, hotel, checkout, and transfers side by side, fix visible geometry/styling differences, and verify keyboard focus and reduced-motion behavior.
 
 - [ ] **Step 8: Commit**
 
