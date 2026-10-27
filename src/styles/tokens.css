@@ -1,0 +1,40 @@
+:root {
+  /* Computed from the visible public UI on 2026-10-27; no source assets copied. */
+  --color-primary: #0e41d2;
+  --color-primary-hover: #0a34b0;
+  --color-primary-soft: #f0f3fb;
+  --color-hero: #acef81;
+  --color-background: #f2f1f0;
+  --color-surface: #fff;
+  --color-text: #292f37;
+  --color-muted: #75787d;
+  --color-border: #c5c5c5;
+  --color-border-soft: #e6e6e6;
+  --color-danger: #bd2638;
+  --color-focus: #0e41d2;
+  --font-family: Verdana, Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --line-height: 1.5;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --radius-sm: 8px;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --shadow-popover: 0 8px 32px rgb(41 47 55 / 16%);
+  --container-width: 1000px;
+  --page-gutter: 16px;
+  --header-height: 48px;
+  --control-height: 48px;
+  --transition-fast: 150ms ease;
+}
