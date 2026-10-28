@@ -1,0 +1,23 @@
+.page { max-width: 1200px; margin: auto; padding: 32px 20px 80px; }
+.page h1 { font-size: 32px; margin: 24px 0; }
+.back, .card a { color: var(--color-primary); }
+.notice { padding: 16px 20px; background: #e8f3ff; border-radius: 12px; margin-bottom: 24px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: start; }
+.main { display: grid; gap: 16px; }
+.card { background: white; border-radius: 16px; padding: 24px; }
+.card h2 { font-size: 22px; margin: 0 0 16px; }
+.card h3 { font-size: 18px; margin: 18px 0 8px; }
+.card p { color: #62676e; margin: 8px 0; }
+.hotel { display: flex; gap: 20px; }
+.hotel img { width: 170px; height: 125px; object-fit: cover; border-radius: 12px; }
+.hotel h2 { margin: 4px 0; }
+.stars { color: #ffb900; }
+.dates { display: flex; gap: 60px; margin: 24px 0; }
+.dates div { display: grid; gap: 4px; }
+.dates small, .dates span { color: #777; }
+.card hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+.total { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 0; }
+.total strong { font-size: 26px; }
+.hint { font-size: 13px; }
+.success { padding: 14px; background: #e6f8ef; border-radius: 10px; color: #16734b !important; }
+@media (max-width: 767px) { .page { padding: 24px 16px 48px; } .page h1 { font-size: 26px; } .grid { grid-template-columns: 1fr; gap: 16px; } .card { padding: 20px; } .hotel img { width: 90px; height: 90px; } .dates { gap: 30px; } }

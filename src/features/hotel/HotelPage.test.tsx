@@ -38,7 +38,7 @@ describe('hotel details', () => {
     await userEvent.click(within(gallery).getByRole('button', { name: 'Следующее фото' }));
     expect(within(gallery).getByRole('img', { name: /Фото 2/ })).toHaveAttribute('src', '/two.webp');
     expect(screen.getAllByText(/15\s*000 ₽/).length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /Выбрать Double room/ })).toHaveAttribute('href', `/checkout/double${query}`);
+    expect(screen.getByRole('link', { name: /Выбрать Double room/ })).toHaveAttribute('href', `/checkout/double${query}&hotel=one`);
     expect(screen.queryByText('Sold out')).not.toBeInTheDocument();
   });
   it('combines bed, meal, payment and cancellation filters', async () => {

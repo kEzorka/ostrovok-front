@@ -31,8 +31,6 @@ describe('application shell', () => {
   it.each([
     ['/', 'Отели и апартаменты'],
     ['/search', 'Поиск отелей'],
-    ['/checkout/demo-rate', 'Демо-подтверждение'],
-    ['/transfers', 'Трансферы'],
     ['/unknown-page', 'Страница не найдена'],
   ])('provides a local placeholder at %s', (path, heading) => {
     render(<RouterProvider router={createMemoryRouter(appRoutes, { initialEntries: [path] })} />);

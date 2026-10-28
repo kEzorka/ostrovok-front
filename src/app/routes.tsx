@@ -4,6 +4,8 @@ import { App } from './App';
 import { HomePage } from '../features/home/HomePage';
 import { SearchPage } from '../features/search/SearchPage';
 import { HotelPage } from '../features/hotel/HotelPage';
+import { CheckoutPage } from '../features/checkout/CheckoutPage';
+import { TransfersPage } from '../features/transfers/TransfersPage';
 
 const informationTitles: Record<string, string> = {
   favorites: 'Избранное',
@@ -44,8 +46,8 @@ export const appRoutes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'search', element: <SearchPage /> },
       { path: 'hotel/:slug', element: <HotelPage /> },
-      { path: 'checkout/:rateId', element: <PlaceholderPage title="Демо-подтверждение" /> },
-      { path: 'transfers', element: <PlaceholderPage title="Трансферы" /> },
+      { path: 'checkout/:rateId', element: <CheckoutPage /> },
+      { path: 'transfers', element: <TransfersPage /> },
       { path: 'info/:topic', element: <InformationPage /> },
       { path: '*', element: <PlaceholderPage title="Страница не найдена" /> },
     ],

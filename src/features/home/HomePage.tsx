@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { parseSearchParams, serializeSearchState } from '../../domain/searchParams';
 import { HotelSearchForm } from '../search-form/HotelSearchForm';
 import { TransferSearchForm } from '../search-form/TransferSearchForm';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
-  const [tab, setTab] = useState<'hotels' | 'transfers'>('hotels');
+  const { search } = useLocation();
+  const [tab, setTab] = useState<'hotels' | 'transfers'>(() => new URLSearchParams(search).get('tab') === 'transfers' ? 'transfers' : 'hotels');
   const [message, setMessage] = useState(false);
   const navigate = useNavigate();
   return <>

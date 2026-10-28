@@ -1,0 +1,31 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { appRoutes } from '../../app/routes';
+import { transfers } from '../../../server/fixtures/transfers';
+
+const query = { from: 'Аэропорт', to: 'Центр', date: '2026-11-01', time: '14:30', passengers: 2 };
+beforeEach(() => vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ query, transfers, total: 6 }), { status: 200 })));
+afterEach(() => vi.restoreAllMocks());
+
+describe('transfer results', () => {
+  it('shows the route, six options and capacity, sorts by price and confirms a selection locally', async () => {
+    render(<RouterProvider router={createMemoryRouter(appRoutes, { initialEntries: ['/transfers?from=Аэропорт&to=Центр&date=2026-11-01&time=14%3A30&passengers=2'] })} />);
+    expect(await screen.findByText(/Аэропорт.*Центр/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Изменить поиск' })).toHaveAttribute('href', '/?tab=transfers');
+    expect(screen.getByText(/2026-11-01.*14:30/)).toBeVisible();
+    const list = screen.getByRole('list', { name: /варианты трансфера/i });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(list).getAllByText(/пассажир/i).length).toBeGreaterThan(0);
+    expect(within(list).getAllByText(/багаж/i).length).toBeGreaterThan(0);
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText('Сортировка'), 'price-desc');
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('Микроавтобус');
+    const calls = vi.mocked(fetch).mock.calls.length;
+    await user.click(within(list).getAllByRole('button', { name: /выбрать/i })[0]);
+    await user.click(screen.getByRole('button', { name: /подтвердить/i }));
+    expect(screen.getByRole('status')).toHaveTextContent(/демо/i);
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(calls);
+  });
+});

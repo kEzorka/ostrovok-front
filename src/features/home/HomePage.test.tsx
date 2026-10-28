@@ -6,6 +6,10 @@ import { appRoutes } from '../../app/routes';
 
 describe('home search', () => {
   afterEach(() => vi.unstubAllGlobals());
+  it('opens transfer search when returning to edit a transfer', () => {
+    render(<RouterProvider router={createMemoryRouter(appRoutes, { initialEntries: ['/?tab=transfers'] })} />);
+    expect(screen.getByLabelText('Откуда')).toBeVisible();
+  });
   it('selects a destination using the keyboard', async () => {
     vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ destinations: [{ id: 'saint-petersburg', name: 'Санкт-Петербург', country: 'Россия' }] }), { status: 200 }));
     const user = userEvent.setup();
