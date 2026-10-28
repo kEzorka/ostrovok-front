@@ -45,6 +45,12 @@ describe('home search', () => {
     expect(screen.getByLabelText('Выезд')).toHaveValue('2031-01-04');
     expect(screen.getByRole('button', { name: /5 гост/ })).toBeVisible();
   });
+  it('shows the catalog label for a restored non-Moscow destination', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ destinations: [{ id: 'kazan', name: 'Казань', country: 'Россия' }] })));
+    appStorage.setLastSearch({ destination: 'kazan', checkIn: '2031-01-02', checkOut: '2031-01-04', rooms: 1, adults: 2, children: [], apartmentsOnly: false, tripType: 'leisure' });
+    render(<RouterProvider router={createMemoryRouter(appRoutes)} />);
+    expect(await screen.findByDisplayValue('Казань, Россия')).toBeVisible();
+  });
   it('uses the current default dates when stored search is invalid', () => {
     localStorage.setItem(APP_STORAGE_KEY, JSON.stringify({ version: 1, favorites: [], lastSearch: { destination: 42 } }));
     const today = new Date();
