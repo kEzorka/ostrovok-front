@@ -1,11 +1,59 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appRoutes } from '../../app/routes';
+import { APP_STORAGE_KEY, appStorage } from '../../shared/storage/appStorage';
 
 describe('home search', () => {
+  beforeEach(() => {
+    const entries = new Map<string, string>();
+    const storage: Storage = { get length() { return entries.size; }, clear: () => entries.clear(), getItem: key => entries.get(key) ?? null, setItem: (key, value) => { entries.set(key, value); }, removeItem: key => { entries.delete(key); }, key: index => [...entries.keys()][index] ?? null };
+    vi.stubGlobal('localStorage', storage);
+  });
   afterEach(() => vi.unstubAllGlobals());
+  it('persists a submitted hotel search and restores it when home remounts', async () => {
+    const user = userEvent.setup();
+    appStorage.setFavorites(['hotel-one']);
+    const router = createMemoryRouter(appRoutes);
+    const view = render(<RouterProvider router={router} />);
+    const checkIn = screen.getByLabelText('Заезд');
+    const checkOut = screen.getByLabelText('Выезд');
+    await user.clear(checkIn); await user.type(checkIn, '2030-05-10');
+    await user.clear(checkOut); await user.type(checkOut, '2030-05-13');
+    await user.click(screen.getByRole('button', { name: /гост/ }));
+    await user.click(screen.getByRole('button', { name: 'Добавить взрослого' }));
+    await user.click(screen.getByLabelText('Только апартаменты'));
+    await user.click(screen.getByLabelText('Командировка'));
+    await user.click(screen.getByRole('button', { name: 'Найти' }));
+    expect(router.state.location.pathname).toBe('/search');
+    expect(router.state.location.search).toBe('?destination=moscow&checkIn=2030-05-10&checkOut=2030-05-13&rooms=1&adults=3&children=&apartmentsOnly=true&tripType=business');
+    expect(appStorage.getLastSearch()).toEqual({ destination: 'moscow', checkIn: '2030-05-10', checkOut: '2030-05-13', rooms: 1, adults: 3, children: [], apartmentsOnly: true, tripType: 'business' });
+    expect(appStorage.getFavorites()).toEqual(['hotel-one']);
+    view.unmount();
+    render(<RouterProvider router={createMemoryRouter(appRoutes)} />);
+    expect(screen.getByLabelText('Заезд')).toHaveValue('2030-05-10');
+    expect(screen.getByLabelText('Выезд')).toHaveValue('2030-05-13');
+    expect(screen.getByRole('button', { name: /3 гост/ })).toBeVisible();
+    expect(screen.getByLabelText('Только апартаменты')).toBeChecked();
+    expect(screen.getByLabelText('Командировка')).toBeChecked();
+  });
+  it('restores a previously stored search on initial mount', () => {
+    appStorage.setLastSearch({ destination: 'moscow', checkIn: '2031-01-02', checkOut: '2031-01-04', rooms: 2, adults: 4, children: [7], apartmentsOnly: false, tripType: 'leisure' });
+    render(<RouterProvider router={createMemoryRouter(appRoutes)} />);
+    expect(screen.getByLabelText('Заезд')).toHaveValue('2031-01-02');
+    expect(screen.getByLabelText('Выезд')).toHaveValue('2031-01-04');
+    expect(screen.getByRole('button', { name: /5 гост/ })).toBeVisible();
+  });
+  it('uses the current default dates when stored search is invalid', () => {
+    localStorage.setItem(APP_STORAGE_KEY, JSON.stringify({ version: 1, favorites: [], lastSearch: { destination: 42 } }));
+    const today = new Date();
+    const expected = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    render(<RouterProvider router={createMemoryRouter(appRoutes)} />);
+    expect(screen.getByLabelText('Заезд')).toHaveValue(expected);
+    expect(screen.getByRole('combobox', { name: 'Направление' })).toHaveValue('Москва, Россия');
+    expect(screen.getByRole('button', { name: /2 гост/ })).toBeVisible();
+  });
   it('opens transfer search when returning to edit a transfer', () => {
     render(<RouterProvider router={createMemoryRouter(appRoutes, { initialEntries: ['/?tab=transfers'] })} />);
     expect(screen.getByLabelText('Откуда')).toBeVisible();
