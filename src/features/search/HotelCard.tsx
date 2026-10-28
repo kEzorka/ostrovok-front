@@ -1,0 +1,10 @@
+import { Link } from 'react-router-dom';
+import { calculateStayPrice } from '../../domain/pricing';
+import type { Hotel, HotelFilters, SearchState } from '../../domain/types';
+import styles from './SearchPage.module.css';
+export function HotelCard({ hotel, state, filters, query, favorite, onFavorite }: { hotel: Hotel; state: SearchState; filters: HotelFilters; query: string; favorite: boolean; onFavorite: () => void }) {
+  const guests = Math.ceil((state.adults + state.children.length) / state.rooms);
+  const prices = hotel.rates.filter(rate => rate.availableRooms >= state.rooms && rate.maxGuests >= guests && (!filters.meals?.length || filters.meals.includes(rate.meal)) && (!filters.freeCancellation || rate.freeCancellation)).map(rate => calculateStayPrice(rate, state)).filter(price => price >= (filters.minPrice ?? 0) && price <= (filters.maxPrice ?? Infinity));
+  const price = Math.min(...prices);
+  return <article className={styles.card}><div className={styles.imageWrap}>{hotel.images[0] && <img src={hotel.images[0]} alt="" />}<button className={styles.heart} aria-label={`${favorite ? 'Убрать' : 'Добавить'} ${hotel.name} ${favorite ? 'из избранного' : 'в избранное'}`} aria-pressed={favorite} onClick={onFavorite}>{favorite ? '♥' : '♡'}</button></div><div className={styles.cardBody}><div className={styles.cardTop}><div><div className={styles.stars}>{'★'.repeat(hotel.stars)}</div><Link className={styles.hotelName} to={`/hotel/${hotel.slug}${query}`}>{hotel.name}</Link><p className={styles.muted}>{hotel.address}</p><p className={styles.muted}>{hotel.distanceFromCenter} км от центра</p></div><strong className={styles.rating}>{hotel.rating}</strong></div><div className={styles.cardBottom}><div><span className={styles.green}>●</span> Хороший вариант для поездки<br /><small>{hotel.reviewCount} отзывов · {hotel.amenities.includes('wifi') ? 'Wi-Fi' : 'Удобства'}</small></div><div className={styles.price}><small>Цена за всё проживание</small><strong>{price.toLocaleString('ru-RU')} ₽</strong><Link to={`/hotel/${hotel.slug}${query}`}>Выбрать номер</Link></div></div></div></article>;
+}
