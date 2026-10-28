@@ -31,7 +31,6 @@ describe('application shell', () => {
   it.each([
     ['/', 'Отели и апартаменты'],
     ['/search', 'Поиск отелей'],
-    ['/hotel/demo-hotel', 'Об отеле'],
     ['/checkout/demo-rate', 'Демо-подтверждение'],
     ['/transfers', 'Трансферы'],
     ['/unknown-page', 'Страница не найдена'],
