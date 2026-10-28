@@ -10,6 +10,7 @@ const hotels = [
   testHotel({ id: 'two', slug: 'two', name: 'Hotel Two', type: 'apartment', popularity: 10, amenities: ['wifi'], rates: [{ ...testRate, nightlyPrice: 2000, meal: 'none', freeCancellation: false }] }),
 ];
 const query = '?destination=moscow&checkIn=2026-10-31&checkOut=2026-11-03&rooms=1&adults=2';
+const destinations = [{ id: 'moscow', name: 'Москва', country: 'Россия' }, { id: 'saint-petersburg', name: 'Санкт-Петербург', country: 'Россия' }, { id: 'kazan', name: 'Казань', country: 'Россия' }, { id: 'sochi', name: 'Сочи', country: 'Россия' }];
 function openSearch() {
   const router = createMemoryRouter(appRoutes, { initialEntries: [`/search${query}`] });
   const view = render(<RouterProvider router={router} />);
@@ -18,7 +19,7 @@ function openSearch() {
 beforeEach(() => {
   const entries = new Map<string, string>();
   vi.stubGlobal('localStorage', { getItem: (key: string) => entries.get(key) ?? null, setItem: (key: string, value: string) => entries.set(key, value) });
-  vi.spyOn(globalThis, 'fetch').mockImplementation(async input => new Response(JSON.stringify(String(input).includes('/destinations') ? { destinations: [] } : { hotels, total: 2 }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async input => new Response(JSON.stringify(String(input).includes('/destinations') ? { destinations } : { hotels, total: 2 }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -57,8 +58,8 @@ describe('search results', () => {
     await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
     await user.click(screen.getAllByRole('button', { name: 'Показать Hotel Two на карте' })[0]);
     expect(screen.getByRole('link', { name: /Hotel Two/ })).toBeVisible();
-    await user.click(screen.getByRole('tab', { name: 'Апартаменты' }));
-    expect(screen.getByRole('tab', { name: 'Апартаменты' })).toHaveAttribute('aria-selected', 'true');
+    await user.click(screen.getByRole('button', { name: 'Апартаменты' }));
+    expect(screen.getByRole('button', { name: 'Апартаменты' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('button', { name: 'Показать Hotel One на карте' })).not.toBeInTheDocument();
   });
   it('prices markers using available rates that satisfy the active filters', async () => {
@@ -93,6 +94,26 @@ describe('search results', () => {
     await user.click(screen.getByLabelText('Бесплатная отмена'));
     expect(screen.getByRole('link', { name: /Hotel One/ })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Показать Hotel Two на карте' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Сбросить' }));
+    expect(screen.getByRole('link', { name: /Hotel One/ })).toBeVisible();
+    expect(screen.getByRole('link', { name: /Hotel Two/ })).toBeVisible();
+  });
+  it.each([['saint-petersburg', 'Санкт-Петербург'], ['kazan', 'Казань'], ['sochi', 'Сочи']])('shows the destination name from the API for %s', async (id, name) => {
+    const router = createMemoryRouter(appRoutes, { initialEntries: [`/search${query.replace('moscow', id)}`] });
+    render(<RouterProvider router={router} />);
+    expect(await screen.findByRole('heading', { name: `${name}: варианты размещения` })).toBeVisible();
+  });
+  it('does not restore an old marker selection after navigating away and back', async () => {
+    const { router } = openSearch();
+    await screen.findByText('Hotel One');
+    const user = userEvent.setup();
+    await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
+    await user.click(screen.getAllByRole('button', { name: 'Показать Hotel Two на карте' })[0]);
+    await act(async () => { await router.navigate(`/search${query.replace('2026-11-03', '2026-11-04')}`); });
+    await screen.findByText('Hotel One');
+    await act(async () => { await router.navigate(`/search${query}`); });
+    expect(await screen.findByRole('link', { name: /Hotel One/ })).toBeVisible();
+    expect(screen.getByRole('link', { name: /Hotel Two/ })).toBeVisible();
   });
   it('shows loading instead of previous results while a changed URL request is pending', async () => {
     let resolveNext!: (response: Response) => void;

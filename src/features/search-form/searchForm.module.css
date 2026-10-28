@@ -1,5 +1,7 @@
 .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 20px #292f371c; }
 .row { display: grid; grid-template-columns: minmax(200px, 2.1fr) minmax(250px, 2fr) minmax(125px, .9fr) 150px; gap: 20px; align-items: start; }
+.compact .row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.compact .row > * { min-width: 0; width: 100%; }
 .transferRow { display: flex; gap: 10px; flex-wrap: wrap; }
 .transferRow > label { flex: 1 1 120px; }
 .field { height: 48px; border: 1px solid var(--color-border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; padding: 4px 12px; color: var(--color-muted); font-size: 11px; line-height: 1.2; min-width: 0; }
