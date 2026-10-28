@@ -1,0 +1,36 @@
+nodes:
+  - id: coordinator
+    model: gpt-6.1-sol
+    reasoning: high
+    prompt: prompts/coordinator.md
+    owns: [docs/superpowers/plans/]
+  - id: recon
+    model: gpt-6-luna
+    reasoning: medium
+    prompt: prompts/recon.md
+    owns: [docs/recon/]
+  - id: design_system
+    model: gpt-6.1-terra
+    reasoning: high
+    prompt: prompts/design-system.md
+    owns: [src/styles/, src/shared/ui/, src/shared/layout/]
+  - id: booking_flow
+    model: gpt-6.1-sol
+    reasoning: high
+    prompt: prompts/booking-flow.md
+    owns: [src/domain/, src/features/, src/shared/api/, src/shared/storage/, server/]
+  - id: visual_qa
+    model: gpt-6-astra
+    reasoning: high
+    prompt: prompts/visual-qa.md
+    owns: [e2e/]
+edges:
+  - { from: coordinator, to: recon }
+  - { from: recon, to: design_system }
+  - { from: recon, to: booking_flow }
+  - { from: design_system, to: visual_qa }
+  - { from: booking_flow, to: visual_qa }
+feedback:
+  - { from: visual_qa, to: design_system }
+  - { from: visual_qa, to: booking_flow }
+  - { from: visual_qa, to: coordinator }
