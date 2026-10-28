@@ -2,6 +2,19 @@ import { expect, test } from '@playwright/test';
 
 const query = '?destination=moscow&checkIn=2027-05-01&checkOut=2027-05-04&rooms=1&adults=2';
 
+test('mobile search modes hide scrollbar chrome while remaining keyboard scrollable', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'The mode strip overflows at the mobile viewport.');
+  await page.goto('/');
+  const modes = page.getByRole('group', { name: 'Поиск' });
+  expect(await modes.evaluate(element => element.scrollWidth > element.clientWidth)).toBe(true);
+  expect(await modes.evaluate(element => getComputedStyle(element).scrollbarWidth)).toBe('none');
+  expect(await modes.evaluate(element => getComputedStyle(element, '::-webkit-scrollbar').display)).toBe('none');
+  await modes.getByRole('button', { name: 'Трансферы' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(modes.getByRole('link', { name: /Для командировок/ })).toBeFocused();
+  await expect.poll(() => modes.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+});
+
 test('key screens fit the viewport and respect reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const path of ['/', `/search${query}`, `/hotel/city-grand${query}`, `/checkout/city-grand-rate-1${query}&hotel=city-grand`, '/transfers']) {

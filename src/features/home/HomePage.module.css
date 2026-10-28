@@ -1,7 +1,8 @@
 .hero { background: var(--color-hero); min-height: 550px; padding: 126px 0 100px; }
 .hero h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .tagline { color: var(--color-primary); font-size: clamp(30px, 3vw, 40px); font-weight: 700; letter-spacing: -1px; line-height: 1.15; margin-bottom: 38px; width: min(calc(100% + 40px), calc(100vw - 32px)); }
-.tabs { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; }
+.tabs { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
 .tabs button, .tabs a { border: 0; border-radius: 16px; padding: 13px 20px; color: var(--color-text); background: #ffffffb5; white-space: nowrap; font-size: 14px; }
 .tabs button[aria-pressed='true'] { background: white; }
 .tabs a:hover { text-decoration: none; }
