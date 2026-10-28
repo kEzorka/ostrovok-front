@@ -22,9 +22,11 @@ test('map marker controls do not overlap', async ({ page }, testInfo) => {
   const buttons = map.getByRole('button');
   const count = await buttons.count();
   expect(count).toBeGreaterThan(1);
+  expect(await map.locator('[data-map-point]').count()).toBe(count);
   const boxes = await Promise.all((await buttons.all()).map(button => button.boundingBox()));
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
     const a = boxes[i]!, b = boxes[j]!;
     expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
   }
+  for (const button of await buttons.all()) { await button.click(); await expect(button).toHaveAttribute('aria-pressed', 'true'); await button.focus(); await page.keyboard.press('Enter'); await expect(button).toHaveAttribute('aria-pressed', 'true'); }
 });

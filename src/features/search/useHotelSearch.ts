@@ -16,5 +16,5 @@ export function useHotelSearch(searchParams: URLSearchParams) {
     return () => { active = false; };
   }, [state]);
   const current = result?.state === state ? result : null;
-  return { state, hotels: filterAndSortHotels(current?.hotels ?? [], state, filters, sort), filters, setFilters, sort, setSort, status: current?.status ?? 'loading' };
+  return { state, catalog: current?.hotels ?? [], hotels: filterAndSortHotels(current?.hotels ?? [], state, filters, sort), filters, setFilters, sort, setSort, status: current?.status ?? 'loading' };
 }

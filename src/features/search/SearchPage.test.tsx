@@ -4,6 +4,8 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { appRoutes } from '../../app/routes';
 import { testHotel, testRate } from '../../test/domainFixtures';
+import { testSearch } from '../../test/domainFixtures';
+import { LocalMap } from './LocalMap';
 
 const hotels = [
   testHotel({ id: 'one', name: 'Hotel One', popularity: 20, rates: [{ ...testRate, nightlyPrice: 4000 }] }),
@@ -24,6 +26,20 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('search results', () => {
+  it('keeps coordinate positions stable when results are filtered or reordered', () => {
+    const west = testHotel({ id: 'west', name: 'West', coordinates: { lat: 55.74, lng: 37.60 } });
+    const east = testHotel({ id: 'east', name: 'East', coordinates: { lat: 55.76, lng: 37.64 } });
+    const catalog = [west, east];
+    const view = render(<LocalMap hotels={catalog} catalog={catalog} state={testSearch} filters={{}} selected={null} onSelect={() => {}} />);
+    const position = (id: string) => { const point = view.container.querySelector(`[data-map-point="${id}"]`) as HTMLElement | null; expect(point).not.toBeNull(); return { left: point?.style.left ?? '', top: point?.style.top ?? '' }; };
+    const westPosition = position('west'), eastPosition = position('east');
+    expect(parseFloat(westPosition.left)).toBeLessThan(parseFloat(eastPosition.left));
+    expect(parseFloat(eastPosition.top)).toBeLessThan(parseFloat(westPosition.top));
+    view.rerender(<LocalMap hotels={[east]} catalog={catalog} state={testSearch} filters={{}} selected={null} onSelect={() => {}} />);
+    expect(position('east')).toEqual(eastPosition);
+    view.rerender(<LocalMap hotels={[east, west]} catalog={catalog} state={testSearch} filters={{}} selected={null} onSelect={() => {}} />);
+    expect(position('west')).toEqual(westPosition);
+  });
   it('shows URL results and sorts by stay price', async () => {
     openSearch();
     expect(await screen.findByRole('link', { name: /Hotel One/ })).toHaveAttribute('href', `/hotel/one${query}`);
@@ -34,7 +50,7 @@ describe('search results', () => {
   });
   it('composes filters, shows live counts, and resets an empty result', async () => {
     openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     const user = userEvent.setup();
     await user.click(screen.getByLabelText('Апартаменты'));
     expect(screen.getByText('Найдено: 1')).toBeVisible();
@@ -45,7 +61,7 @@ describe('search results', () => {
   });
   it('persists favorites across remounts', async () => {
     const view = openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     await userEvent.click(screen.getByRole('button', { name: 'Добавить Hotel One в избранное' }));
     view.unmount();
     openSearch();
@@ -53,7 +69,7 @@ describe('search results', () => {
   });
   it('synchronizes map markers and cards and selects a category', async () => {
     openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     const user = userEvent.setup();
     await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
     await user.click(screen.getAllByRole('button', { name: 'Показать Hotel Two на карте' })[0]);
@@ -73,7 +89,7 @@ describe('search results', () => {
     ] });
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ hotels: [hotel], total: 1 }), { status: 200 }));
     openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     const user = userEvent.setup();
     await user.click(screen.getByLabelText('Бесплатная отмена'));
     await user.click(screen.getByLabelText('Завтрак включён'));
@@ -81,13 +97,13 @@ describe('search results', () => {
     await user.type(screen.getByLabelText('Цена до'), '18000');
     await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
     const marker = screen.getAllByRole('button', { name: 'Показать Hotel One на карте' })[0];
-    expect(marker.textContent?.replace(/\s/g, '')).toBe('15000₽');
+    expect(marker.textContent?.replace(/\s/g, '')).toContain('15000₽');
     await user.click(marker);
     expect(screen.getByRole('article').textContent?.replace(/\s/g, '')).toContain('15000₽');
   });
   it('shows remaining cards when filters remove the selected map hotel', async () => {
     openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     const user = userEvent.setup();
     await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
     await user.click(screen.getAllByRole('button', { name: 'Показать Hotel Two на карте' })[0]);
@@ -105,12 +121,12 @@ describe('search results', () => {
   });
   it('does not restore an old marker selection after navigating away and back', async () => {
     const { router } = openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     const user = userEvent.setup();
     await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
     await user.click(screen.getAllByRole('button', { name: 'Показать Hotel Two на карте' })[0]);
     await act(async () => { await router.navigate(`/search${query.replace('2026-11-03', '2026-11-04')}`); });
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     await act(async () => { await router.navigate(`/search${query}`); });
     expect(await screen.findByRole('link', { name: /Hotel One/ })).toBeVisible();
     expect(screen.getByRole('link', { name: /Hotel Two/ })).toBeVisible();
@@ -121,12 +137,12 @@ describe('search results', () => {
       ? new Promise<Response>(resolve => { resolveNext = resolve; })
       : Promise.resolve(new Response(JSON.stringify({ hotels, total: 2 }), { status: 200 })));
     const { router } = openSearch();
-    await screen.findByText('Hotel One');
+    await screen.findByRole('link', { name: 'Hotel One' });
     await act(async () => { await router.navigate(`/search${query.replace('moscow', 'other')}`); });
     expect(screen.getByText('Загружаем варианты…')).toBeVisible();
-    expect(screen.queryByText('Hotel One')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Hotel One' })).not.toBeInTheDocument();
     expect(screen.queryByText('Ничего не найдено')).not.toBeInTheDocument();
     await act(async () => { resolveNext(new Response(JSON.stringify({ hotels: [testHotel({ id: 'other', name: 'Other Hotel', destinationId: 'other' })], total: 1 }), { status: 200 })); });
-    expect(await screen.findByText('Other Hotel')).toBeVisible();
+    expect(await screen.findByRole('link', { name: 'Other Hotel' })).toBeVisible();
   });
 });
