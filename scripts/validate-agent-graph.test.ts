@@ -55,11 +55,32 @@ describe('agent graph validator', () => {
     ['missing edge', { nodes, edges: edges.slice(1) }],
     ['extra edge', { nodes, edges: [...edges, { from: 'coordinator', to: 'visual_qa' }] }],
     ['unknown dependency', { nodes, edges: [...edges, { from: 'unknown', to: 'recon' }] }],
-    ['execution cycle', { nodes, edges: [...edges, { from: 'visual_qa', to: 'recon' }] }],
     ['duplicate ownership', { nodes: nodes.map((n) => n.id === 'recon' ? { ...n, owns: ['coordination/'] } : n), edges }],
     ['overlapping ownership', { nodes: nodes.map((n) => n.id === 'recon' ? { ...n, owns: ['coordination/nested/'] } : n), edges }],
   ])('rejects %s', (_name, graph) => {
     expect(runGraph(graph).status).not.toBe(0)
+  })
+
+  it.each(['.', 'foo/..'])('rejects root ownership %s overlapping another node', (path) => {
+    for (const owner of ['coordinator', 'recon']) {
+      const graph = { nodes: nodes.map((n) => n.id === owner ? { ...n, owns: [path] } : n), edges }
+      const result = runGraph(graph)
+      expect(result.status).not.toBe(0)
+      expect(result.stderr).toMatch(/overlapping ownership/)
+    }
+  })
+
+  it.each(['../outside', 'foo/../../outside', '/outside'])('rejects ownership outside the project: %s', (path) => {
+    const graph = { nodes: nodes.map((n) => n.id === 'recon' ? { ...n, owns: [path] } : n), edges }
+    const result = runGraph(graph)
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toMatch(/invalid ownership/)
+  })
+
+  it('reports a cycle independently of the exact-edge check', () => {
+    const result = runGraph({ nodes, edges: [...edges, { from: 'visual_qa', to: 'recon' }] })
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toMatch(/cyclic execution dependencies/)
   })
 
   it('rejects missing prompt files', () => {

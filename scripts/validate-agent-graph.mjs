@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from 'node:fs'
 import console from 'node:console'
-import { dirname, isAbsolute, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, URL } from 'node:url'
 import { parse } from 'yaml'
@@ -14,6 +14,12 @@ const requiredEdges = new Set([
   'coordinator:recon', 'recon:design_system', 'recon:booking_flow',
   'design_system:visual_qa', 'booking_flow:visual_qa',
 ])
+const projectRoot = fileURLToPath(new URL('../', import.meta.url))
+
+function contains(parent, child) {
+  const path = relative(parent, child)
+  return path === '' || (path !== '..' && !path.startsWith(`..${sep}`) && !isAbsolute(path))
+}
 
 function validate(path) {
   const graph = parse(readFileSync(path, 'utf8'))
@@ -31,8 +37,9 @@ function validate(path) {
     if (!Array.isArray(node.owns) || node.owns.length === 0) throw Error(`missing ownership: ${node.id}`)
     for (const entry of node.owns) {
       if (typeof entry !== 'string' || !entry || isAbsolute(entry)) throw Error(`invalid ownership: ${node.id}`)
-      const normalized = resolve('/', entry)
-      if ([...ownership].some((owned) => owned === normalized || owned.startsWith(normalized + sep) || normalized.startsWith(owned + sep))) throw Error(`overlapping ownership: ${entry}`)
+      const normalized = resolve(projectRoot, entry)
+      if (!contains(projectRoot, normalized)) throw Error(`invalid ownership: ${entry}`)
+      if ([...ownership].some((owned) => contains(owned, normalized) || contains(normalized, owned))) throw Error(`overlapping ownership: ${entry}`)
       ownership.add(normalized)
     }
   }
