@@ -41,4 +41,17 @@ describe('demo checkout', () => {
     await act(async () => { await router.navigate(`/checkout/rate-1${query}`); });
     expect(await screen.findByRole('button', { name: /подтвердить/i })).toBeVisible();
   });
+  it('does not restore confirmations when navigating back and forward through rates', async () => {
+    const router = createMemoryRouter(appRoutes, { initialEntries: [`/checkout/rate-1${query}`] });
+    render(<RouterProvider router={router} />);
+    await userEvent.click(await screen.findByRole('button', { name: /подтвердить/i }));
+    await act(async () => { await router.navigate(`/checkout/rate-1${query}&tripType=business`); });
+    await userEvent.click(await screen.findByRole('button', { name: /подтвердить/i }));
+    await act(async () => { await router.navigate(-1); });
+    expect(await screen.findByRole('button', { name: /подтвердить/i })).toBeVisible();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    await act(async () => { await router.navigate(1); });
+    expect(await screen.findByRole('button', { name: /подтвердить/i })).toBeVisible();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
 });

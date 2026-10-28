@@ -17,6 +17,12 @@ export function CheckoutPage() {
   const key = `${locationKey}\n${slug}\n${search}\n${rateId}`;
   const [result, setResult] = useState<{ key: string; hotel?: Hotel; error?: boolean }>();
   const [confirmedKey, setConfirmedKey] = useState('');
+  const [previousKey, setPreviousKey] = useState(key);
+  if (previousKey !== key) {
+    setPreviousKey(key);
+    setResult(undefined);
+    setConfirmedKey('');
+  }
   useEffect(() => {
     let active = true;
     const request = slug ? apiClient.getHotel(slug).then(({ hotel }) => hotel) : apiClient.searchHotels(parseSearchParams(new URLSearchParams(search))).then(({ hotels }) => hotels.find(hotel => hotel.rates.some(rate => rate.id === rateId)));

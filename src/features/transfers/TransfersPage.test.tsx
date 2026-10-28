@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,7 +6,7 @@ import { appRoutes } from '../../app/routes';
 import { transfers } from '../../../server/fixtures/transfers';
 
 const query = { from: 'Аэропорт', to: 'Центр', date: '2026-11-01', time: '14:30', passengers: 2 };
-beforeEach(() => vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ query, transfers, total: 6 }), { status: 200 })));
+beforeEach(() => { vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ query, transfers, total: 6 }), { status: 200 })); });
 afterEach(() => vi.restoreAllMocks());
 
 describe('transfer results', () => {
@@ -17,6 +17,8 @@ describe('transfer results', () => {
     expect(screen.getByText(/2026-11-01.*14:30/)).toBeVisible();
     const list = screen.getByRole('list', { name: /варианты трансфера/i });
     expect(within(list).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(list).getByRole('button', { name: 'Выбрать Эконом' })).toBeVisible();
+    expect(within(list).getByRole('button', { name: 'Выбрать Комфорт' })).toBeVisible();
     expect(within(list).getAllByText(/пассажир/i).length).toBeGreaterThan(0);
     expect(within(list).getAllByText(/багаж/i).length).toBeGreaterThan(0);
     const user = userEvent.setup();
@@ -27,5 +29,46 @@ describe('transfer results', () => {
     await user.click(screen.getByRole('button', { name: /подтвердить/i }));
     expect(screen.getByRole('status')).toHaveTextContent(/демо/i);
     expect(vi.mocked(fetch).mock.calls).toHaveLength(calls);
+  });
+  it('clears selections and confirmations on Back and Forward, including while loading or after failure', async () => {
+    const path = '/transfers?from=Аэропорт&to=Центр&date=2026-11-01&time=14%3A30&passengers=2';
+    const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
+    render(<RouterProvider router={router} />);
+    const user = userEvent.setup();
+    await user.click((await screen.findAllByRole('button', { name: /выбрать/i }))[0]);
+    await user.click(screen.getByRole('button', { name: /подтвердить/i }));
+    await act(async () => { await router.navigate(`${path}&to=Другой`); });
+    await user.click((await screen.findAllByRole('button', { name: /выбрать/i }))[0]);
+    await user.click(screen.getByRole('button', { name: /подтвердить/i }));
+    let rejectRequest!: (error: Error) => void;
+    vi.mocked(fetch).mockImplementation(() => new Promise<Response>((_, reject) => { rejectRequest = reject; }));
+    await act(async () => { await router.navigate(-1); });
+    expect(screen.getByText('Загружаем варианты…')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Выбранный трансфер' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    await act(async () => { rejectRequest(new Error('offline')); });
+    expect(await screen.findByRole('alert')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Выбранный трансфер' })).not.toBeInTheDocument();
+    vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ query, transfers, total: 6 }), { status: 200 }));
+    await act(async () => { await router.navigate(1); });
+    await screen.findByRole('list', { name: /варианты трансфера/i });
+    expect(screen.queryByRole('region', { name: 'Выбранный трансфер' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+  it('never displays the earlier selection while a Back navigation reloads and fails', async () => {
+    const path = '/transfers?from=Airport&to=City&date=2026-11-01&time=14%3A30&passengers=2';
+    const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
+    render(<RouterProvider router={router} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Выбрать Эконом' }));
+    await act(async () => { await router.navigate(`${path}&passengers=3`); });
+    await screen.findByRole('list', { name: /варианты трансфера/i });
+    let rejectRequest!: (error: Error) => void;
+    vi.mocked(fetch).mockImplementation(() => new Promise<Response>((_, reject) => { rejectRequest = reject; }));
+    await act(async () => { await router.navigate(-1); });
+    expect(screen.getByText('Загружаем варианты…')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Выбранный трансфер' })).not.toBeInTheDocument();
+    await act(async () => { rejectRequest(new Error('offline')); });
+    expect(await screen.findByRole('alert')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Выбранный трансфер' })).not.toBeInTheDocument();
   });
 });
