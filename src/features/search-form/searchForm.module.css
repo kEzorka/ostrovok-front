@@ -33,4 +33,5 @@
 .counter div { display: flex; align-items: center; gap: 12px; }
 .counter button { width: 32px; height: 32px; border: 1px solid var(--color-border); border-radius: 50%; background: white; }
 .error { color: var(--color-danger); margin-top: 10px; font-size: 14px; }
+@media (min-width: 768px) and (max-width: 1099px) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 @media (max-width: 767px) { .card { padding: 20px; } .card:has(.row) { display: flex; flex-direction: column; justify-content: space-between; min-height: 392px; gap: 8px; } .row { display: contents; } .row > * { width: 100%; } .row .submit { order: 2; } .extras { gap: 12px; margin-top: 0; } .transferRow { flex-direction: column; } .transferRow > label { flex: auto; } }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import styles from './layout.module.css';
@@ -21,6 +21,7 @@ function Icon({ name }: { name: keyof typeof iconPaths }) {
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
 
   return (
     <header className={styles.header}>
@@ -34,6 +35,7 @@ export function SiteHeader() {
         <Link className={`${styles.iconLink} ${styles.nonMobile}`} to="/info/help" aria-label="Помощь"><Icon name="help" /></Link>
         <Link className={styles.profileLink} to="/info/profile" aria-label="Войти"><Icon name="profile" /><span className={styles.nonMobile}>Войти</span></Link>
         <Button
+          ref={menuTrigger}
           className={styles.menuButton}
           variant="ghost"
           aria-label="Меню"
@@ -44,7 +46,7 @@ export function SiteHeader() {
         ><Icon name="menu" /></Button>
       </nav>
       {menuOpen && (
-        <nav className={styles.menu} id="site-menu" aria-label="Меню сервиса" onKeyDown={(event) => { if (event.key === 'Escape') setMenuOpen(false); }}>
+        <nav className={styles.menu} id="site-menu" aria-label="Меню сервиса" onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); menuTrigger.current?.focus(); } }}>
           {[
             ['/', 'Отели и апартаменты'],
             ['/transfers', 'Трансферы'],
