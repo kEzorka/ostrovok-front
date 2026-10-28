@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
@@ -60,5 +60,52 @@ describe('search results', () => {
     await user.click(screen.getByRole('tab', { name: 'Апартаменты' }));
     expect(screen.getByRole('tab', { name: 'Апартаменты' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('button', { name: 'Показать Hotel One на карте' })).not.toBeInTheDocument();
+  });
+  it('prices markers using available rates that satisfy the active filters', async () => {
+    const hotel = testHotel({ name: 'Hotel One', rates: [
+      { ...testRate, id: 'unavailable', nightlyPrice: 100, availableRooms: 0 },
+      { ...testRate, id: 'capacity', nightlyPrice: 200, maxGuests: 1 },
+      { ...testRate, id: 'no-cancel', nightlyPrice: 300, freeCancellation: false },
+      { ...testRate, id: 'no-breakfast', nightlyPrice: 400, meal: 'none' },
+      { ...testRate, id: 'cheap', nightlyPrice: 500 },
+      { ...testRate, id: 'matching', nightlyPrice: 5000 },
+    ] });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ hotels: [hotel], total: 1 }), { status: 200 }));
+    openSearch();
+    await screen.findByText('Hotel One');
+    const user = userEvent.setup();
+    await user.click(screen.getByLabelText('Бесплатная отмена'));
+    await user.click(screen.getByLabelText('Завтрак включён'));
+    await user.type(screen.getByLabelText('Цена от'), '12000');
+    await user.type(screen.getByLabelText('Цена до'), '18000');
+    await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
+    const marker = screen.getAllByRole('button', { name: 'Показать Hotel One на карте' })[0];
+    expect(marker.textContent?.replace(/\s/g, '')).toBe('15000₽');
+    await user.click(marker);
+    expect(screen.getByRole('article').textContent?.replace(/\s/g, '')).toContain('15000₽');
+  });
+  it('shows remaining cards when filters remove the selected map hotel', async () => {
+    openSearch();
+    await screen.findByText('Hotel One');
+    const user = userEvent.setup();
+    await user.click(screen.getAllByRole('button', { name: 'На карте' })[0]);
+    await user.click(screen.getAllByRole('button', { name: 'Показать Hotel Two на карте' })[0]);
+    await user.click(screen.getByLabelText('Бесплатная отмена'));
+    expect(screen.getByRole('link', { name: /Hotel One/ })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Показать Hotel Two на карте' })).not.toBeInTheDocument();
+  });
+  it('shows loading instead of previous results while a changed URL request is pending', async () => {
+    let resolveNext!: (response: Response) => void;
+    vi.mocked(fetch).mockImplementation(input => String(input).includes('destination=other')
+      ? new Promise<Response>(resolve => { resolveNext = resolve; })
+      : Promise.resolve(new Response(JSON.stringify({ hotels, total: 2 }), { status: 200 })));
+    const { router } = openSearch();
+    await screen.findByText('Hotel One');
+    await act(async () => { await router.navigate(`/search${query.replace('moscow', 'other')}`); });
+    expect(screen.getByText('Загружаем варианты…')).toBeVisible();
+    expect(screen.queryByText('Hotel One')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ничего не найдено')).not.toBeInTheDocument();
+    await act(async () => { resolveNext(new Response(JSON.stringify({ hotels: [testHotel({ id: 'other', name: 'Other Hotel', destinationId: 'other' })], total: 1 }), { status: 200 })); });
+    expect(await screen.findByText('Other Hotel')).toBeVisible();
   });
 });
