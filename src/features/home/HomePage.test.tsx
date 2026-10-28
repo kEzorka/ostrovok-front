@@ -56,7 +56,12 @@ describe('home search', () => {
   });
   it('opens transfer search when returning to edit a transfer', () => {
     render(<RouterProvider router={createMemoryRouter(appRoutes, { initialEntries: ['/?tab=transfers'] })} />);
-    expect(screen.getByLabelText('Откуда')).toBeVisible();
+    expect(screen.getByLabelText('Откуда')).toHaveValue('');
+    expect(screen.getByLabelText('Куда')).toHaveValue('');
+    expect(screen.getByLabelText('Дата поездки')).toHaveValue('');
+    expect(screen.getByLabelText('Время')).toHaveValue('12:00');
+    expect(screen.getByLabelText('Пассажиры')).toHaveValue('1');
+    expect(screen.getByLabelText('В одну сторону')).toBeChecked();
   });
   it('selects a destination using the keyboard', async () => {
     vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ destinations: [{ id: 'saint-petersburg', name: 'Санкт-Петербург', country: 'Россия' }] }), { status: 200 }));

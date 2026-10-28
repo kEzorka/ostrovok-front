@@ -13,7 +13,8 @@ describe('transfer results', () => {
   it('shows the route, six options and capacity, sorts by price and confirms a selection locally', async () => {
     render(<RouterProvider router={createMemoryRouter(appRoutes, { initialEntries: ['/transfers?from=Аэропорт&to=Центр&date=2026-11-01&time=14%3A30&passengers=2'] })} />);
     expect(await screen.findByText(/Аэропорт.*Центр/)).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Изменить поиск' })).toHaveAttribute('href', '/?tab=transfers');
+    const editUrl = new URL(screen.getByRole('link', { name: 'Изменить поиск' }).getAttribute('href')!, 'http://localhost');
+    expect(Object.fromEntries(editUrl.searchParams)).toEqual({ tab: 'transfers', from: 'Аэропорт', to: 'Центр', date: '2026-11-01', time: '14:30', passengers: '2' });
     expect(screen.getByText(/2026-11-01.*14:30/)).toBeVisible();
     const list = screen.getByRole('list', { name: /варианты трансфера/i });
     expect(within(list).getAllByRole('listitem')).toHaveLength(6);
@@ -29,6 +30,24 @@ describe('transfer results', () => {
     await user.click(screen.getByRole('button', { name: /подтвердить/i }));
     expect(screen.getByRole('status')).toHaveTextContent(/демо/i);
     expect(vi.mocked(fetch).mock.calls).toHaveLength(calls);
+  });
+  it('preserves the route and return date through editing and a new search', async () => {
+    const roundTrip = { ...query, passengers: 12, returnDate: '2026-11-05' };
+    vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ query: roundTrip, transfers, total: 6 }), { status: 200 }));
+    const router = createMemoryRouter(appRoutes, { initialEntries: ['/transfers?from=Аэропорт&to=Центр&date=2026-11-01&time=14%3A30&passengers=12&returnDate=2026-11-05'] });
+    render(<RouterProvider router={router} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('link', { name: 'Изменить поиск' }));
+    expect(screen.getByLabelText('Откуда')).toHaveValue('Аэропорт');
+    expect(screen.getByLabelText('Куда')).toHaveValue('Центр');
+    expect(screen.getByLabelText('Дата поездки')).toHaveValue('2026-11-01');
+    expect(screen.getByLabelText('Время')).toHaveValue('14:30');
+    expect(screen.getByLabelText('Пассажиры')).toHaveValue('12');
+    expect(screen.getByLabelText('Туда и обратно')).toBeChecked();
+    expect(screen.getByLabelText('Дата обратно')).toHaveValue('2026-11-05');
+    await user.click(screen.getByRole('button', { name: 'Найти' }));
+    expect(router.state.location.pathname).toBe('/transfers');
+    expect(Object.fromEntries(new URLSearchParams(router.state.location.search))).toEqual({ from: 'Аэропорт', to: 'Центр', date: '2026-11-01', time: '14:30', passengers: '12', returnDate: '2026-11-05' });
   });
   it('clears selections and confirmations on Back and Forward, including while loading or after failure', async () => {
     const path = '/transfers?from=Аэропорт&to=Центр&date=2026-11-01&time=14%3A30&passengers=2';

@@ -1,10 +1,23 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { parseSearchParams, serializeSearchState } from '../../domain/searchParams';
+import { dateTimestamp } from '../../domain/dates';
+import type { TransferQuery } from '../../domain/types';
 import { appStorage } from '../../shared/storage/appStorage';
 import { HotelSearchForm } from '../search-form/HotelSearchForm';
 import { TransferSearchForm } from '../search-form/TransferSearchForm';
 import styles from './HomePage.module.css';
+
+function transferInitialState(search: string): TransferQuery {
+  const params = new URLSearchParams(search);
+  const passengers = Number(params.get('passengers'));
+  const date = params.get('date') ?? '';
+  const time = params.get('time') ?? '';
+  const returnDate = params.get('returnDate') ?? '';
+  const initial: TransferQuery = { from: (params.get('from') ?? '').slice(0, 200), to: (params.get('to') ?? '').slice(0, 200), date: dateTimestamp(date) !== null ? date : '', time: /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time : '12:00', passengers: Number.isInteger(passengers) && passengers >= 1 && passengers <= 16 ? passengers : 1 };
+  if (dateTimestamp(returnDate) !== null && returnDate >= initial.date) initial.returnDate = returnDate;
+  return initial;
+}
 
 export function HomePage() {
   const { search } = useLocation();
@@ -14,7 +27,7 @@ export function HomePage() {
   const navigate = useNavigate();
   return <>
     <section className={styles.hero}><div className="container"><h1>Отели и апартаменты</h1><p className={styles.tagline}>Оооочень много отелей и апартаментов!</p><div className={styles.tabs} role="group" aria-label="Поиск"><button type="button" aria-pressed={tab === 'hotels'} onClick={() => setTab('hotels')}>Отели и апартаменты</button><button type="button" aria-pressed={tab === 'transfers'} onClick={() => setTab('transfers')}>Трансферы</button><a href="/info/partners" onFocus={event => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })}>Для командировок ↗</a></div>
-      {tab === 'hotels' ? <HotelSearchForm initialState={initialSearch} onSubmit={state => { appStorage.setLastSearch(state); navigate(`/search?${serializeSearchState(state)}`); }} /> : <TransferSearchForm onSubmit={query => { const params = new URLSearchParams({ from: query.from, to: query.to, date: query.date, time: query.time, passengers: String(query.passengers) }); if (query.returnDate) params.set('returnDate', query.returnDate); navigate(`/transfers?${params}`); }} />}
+      {tab === 'hotels' ? <HotelSearchForm initialState={initialSearch} onSubmit={state => { appStorage.setLastSearch(state); navigate(`/search?${serializeSearchState(state)}`); }} /> : <TransferSearchForm initialState={transferInitialState(search)} onSubmit={query => { const params = new URLSearchParams({ from: query.from, to: query.to, date: query.date, time: query.time, passengers: String(query.passengers) }); if (query.returnDate) params.set('returnDate', query.returnDate); navigate(`/transfers?${params}`); }} />}
     </div></section>
     <div className={`container ${styles.content}`}><section className={styles.promo}><div className={styles.promoArt} aria-hidden="true">✦</div><div><h2>Путешествуйте выгоднее!</h2><p>Бронируйте отели и апартаменты для любых поездок.</p></div></section>
       <section className={styles.benefits}><h2>Путешествуйте с Островком</h2><div className={styles.benefitGrid}><article><span>✦</span><h3>Большой выбор</h3><p>Отели и апартаменты по всему миру</p></article><article><span>♡</span><h3>Выгодные цены</h3><p>Находите подходящие варианты для каждой поездки</p></article><article><span>☺</span><h3>Мы всегда рядом</h3><p>Поддержка на каждом этапе путешествия</p></article></div></section>
